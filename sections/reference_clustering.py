@@ -23,6 +23,8 @@ The important distinction:
 - **Clustering** creates initial cluster nodes from an `SRPTensor`.
 - **Linking** connects existing nodes with parent/child relationships.
 - **Merging** creates new parent nodes that combine several clusters.
+- **Centroid merging** groups clusters by similarity in the same sparse feature space.
+- **Coverage expansion** assigns otherwise uncovered entities to nearby clusters.
 - **Pruning/filtering** changes which nodes are active or visible, without necessarily deleting the whole graph history.
 - **Annotation** adds tags, labels, or descriptions.
 """
@@ -417,6 +419,84 @@ FeatureContainmentMerge(
 
     code(
         """
+CentroidSimilarityMerge(
+    threshold: float,
+    metric: Literal["cosine", "dot"] = "cosine",
+    top_k: int | None = None,
+    max_rounds: int = 10,
+    min_group_size: int = 2,
+    normalize_centroids: bool = True,
+    verbose: bool = False,
+    show_progress: bool = False,
+)
+"""
+    )
+    st.markdown(
+        """
+Merges active clusters when their sparse centroids are similar. This is the
+cluster-level analogue of `SRPSimilarityClustering`: instead of comparing
+entity rows, it compares cluster centroid vectors.
+
+- `threshold`: minimum centroid similarity.
+- `metric`: `cosine` compares direction; `dot` compares raw centroid dot product.
+- `top_k`: optional nearest-neighbor cap. `None` compares all centroid pairs above threshold.
+- `max_rounds`: repeat merging until stable or this many rounds.
+- `min_group_size`: minimum connected component size required for a merge.
+- `normalize_centroids`: normalize merged parent centroid.
+- `verbose`, `show_progress`: diagnostics.
+
+Output: additional `merge:merge_clusters_by_centroid_similarity:*` parent
+nodes, while original clusters remain as children.
+"""
+    )
+
+    code(
+        """
+AssignUnclusteredToNearestCluster(
+    srp: SRPTensor,
+    metric: Literal["cosine", "dot"] = "cosine",
+    min_similarity: float | None = None,
+    top_k_clusters: int = 1,
+    cluster_scope: Literal["active", "all", "leaves", "roots"] = "active",
+    coverage_scope: Literal["active", "all"] = "active",
+    assigned_weight: float = 1.0,
+    centroid_top_k: int | None = None,
+    normalize_centroids: bool = True,
+    verbose: bool = False,
+)
+"""
+    )
+    st.markdown(
+        """
+Expands cluster coverage by assigning entities that are not covered by the
+selected coverage scope to their nearest cluster centroids. This is a
+**coverage step**, not a discovery step: it creates expanded parent nodes while
+preserving original high-confidence clusters as children.
+
+Graph shape:
+
+```text
+expanded_cluster
+└── original_cluster
+```
+
+- `srp`: original entity SRP rows used for nearest-centroid assignment.
+- `metric`: `cosine` or raw `dot` between entity row and cluster centroid.
+- `min_similarity`: optional threshold. `None` means every uncovered entity is assigned.
+- `top_k_clusters`: number of nearest clusters to assign each uncovered entity to.
+- `cluster_scope`: which clusters can receive uncovered entities.
+- `coverage_scope`: which clusters define whether an entity is already covered.
+- `assigned_weight`: weight of newly assigned entities when recomputing the expanded centroid.
+- `centroid_top_k`: optional truncation of expanded centroids.
+- `normalize_centroids`: normalize expanded centroids.
+
+Output: new expanded parent nodes with assignment provenance in `metadata`
+and counts/similarity summaries in `stats`.
+"""
+    )
+
+    code(
+        """
 TagSimilarityMerge(
     threshold: float,
     metric: Literal["weighted_jaccard", "cosine"] = "weighted_jaccard",
@@ -624,14 +704,20 @@ graph = cc.ClusteringPipeline(
         # 3. Create explicit parent nodes from links.
         cc.MaterializeLinkMerges(parent_scope="active"),
 
-        # 4. Choose active visible clusters.
+        # 4. Optionally group nearby cluster centroids.
+        cc.CentroidSimilarityMerge(threshold=0.85, top_k=20),
+
+        # 5. Optionally expand final coverage.
+        cc.AssignUnclusteredToNearestCluster(srp, coverage_scope="all"),
+
+        # 6. Choose active visible clusters.
         cc.PruneRedundantRoots(),
         cc.SizeFilter(min_cluster_size=20),
 
-        # 5. Add human-readable names.
+        # 7. Add human-readable names.
         cc.LabelClusters(...),
 
-        # 6. Optional semantic grouping.
+        # 8. Optional semantic grouping.
         cc.SemanticSimilarityMerge(...),
     ]
 ).fit(srp)
