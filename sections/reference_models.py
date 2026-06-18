@@ -319,3 +319,123 @@ print(srp.cols.shape, srp.vals.shape)
 # torch.Size([1000, 128]) torch.Size([1000, 128])
 """
     )
+
+    st.subheader("TopKSAETrainer")
+    st.markdown(
+        """
+`TopKSAETrainer` is a compact, sklearn-style helper for the common workflow:
+fit an SAE on a dense embedding matrix, then export sparse codes as an
+`SRPTensor`. It is intentionally thin: the underlying model is still `TopKSAE`,
+but the trainer handles batching, optimizer setup, optional cosine learning-rate
+decay, progress reporting, and SRP export.
+"""
+    )
+    render_signature(
+        """
+@dataclass(frozen=True)
+class TopKSAEConfig:
+    hidden_dim: int = 4096
+    k: int = 128
+    decoder_bias: bool = False
+    pre_act: torch.nn.Module | None = None
+    post_sparsify: torch.nn.Module | None = None
+    encoder: torch.nn.Module | None = None
+    decoder: torch.nn.Module | None = None
+    sparsify_score_mode: Literal["abs", "raw", "relu"] = "abs"
+    sparsify_ste_alpha: float = 0.01
+    alpha_loss: float = 0.01
+    l1_penalty: float = 0.0
+    batch_size: int = 128
+    shuffle: bool = True
+    seed: int = 42
+    epochs: int = 10
+    lr: float = 1e-3
+    weight_decay: float = 0.0
+    decay: bool = False
+    compile: bool = False
+    device: str | torch.device = "cpu"
+    show_progress: bool = True
+    srp_score_mode: Literal["abs", "raw", "relu"] = "abs"
+
+class TopKSAETrainer:
+    def fit(self, embeddings: np.ndarray | torch.Tensor) -> TopKSAETrainer
+    def encode(self, embeddings: np.ndarray | torch.Tensor) -> torch.Tensor
+    def transform(self, embeddings: np.ndarray | torch.Tensor) -> SRPTensor
+    def fit_transform(self, embeddings: np.ndarray | torch.Tensor) -> SRPTensor
+"""
+    )
+
+    st.markdown(
+        """
+**Configuration Parameters**
+
+- `hidden_dim`: sparse code width.
+- `k`: number of non-zero sparse features exported per row.
+- `decoder_bias`: whether the default decoder has a bias.
+- `pre_act`: optional module applied before Top-k selection.
+- `post_sparsify`: optional module applied after Top-k selection, for example L1 normalization.
+- `encoder`: optional custom encoder. If omitted, uses a linear encoder.
+- `decoder`: optional custom decoder. If omitted, uses a linear decoder.
+- `sparsify_score_mode`: score used to choose Top-k features: `abs`, `raw`, or `relu`.
+- `sparsify_ste_alpha`: gradient scale for non-selected features. `0.0` means no gradient outside Top-k.
+- `alpha_loss`: blends cosine and MSE losses as `alpha_loss * cosine_loss + (1 - alpha_loss) * mse`.
+- `l1_penalty`: optional L1 penalty on sparse codes.
+- `batch_size`: number of embedding rows per training batch.
+- `shuffle`: whether to shuffle rows between epochs.
+- `seed`: random seed for initialization and shuffling.
+- `epochs`: number of training epochs.
+- `lr`: AdamW learning rate.
+- `weight_decay`: AdamW weight decay.
+- `decay`: if `True`, use cosine learning-rate decay from `lr` across training.
+- `compile`: if `True`, wraps the model with `torch.compile`.
+- `device`: training device, for example `cpu`, `cuda`, or `mps`.
+- `show_progress`: whether to show a tqdm progress bar.
+- `srp_score_mode`: score used by `SRPTensor.from_dense(...)` during export.
+
+**Important Methods**
+
+- `fit(embeddings)`: train the SAE and keep the fitted model inside the trainer.
+- `encode(embeddings)`: return dense sparse-code tensors from the encoder and Top-k layer.
+- `transform(embeddings)`: encode embeddings and return an `SRPTensor`.
+- `fit_transform(embeddings)`: train and export sparse codes in one call.
+"""
+    )
+
+    st.markdown("**Example: Train and Export SRP Codes**")
+    render_signature(
+        """
+import numpy as np
+import torch.nn.functional as F
+from compresso import TopKSAEConfig, TopKSAETrainer
+
+class L1Normalize(torch.nn.Module):
+    def forward(self, x):
+        return F.normalize(x, p=1.0, dim=-1)
+
+A = np.random.randn(10_000, 768).astype("float32")
+
+model = TopKSAETrainer(
+    TopKSAEConfig(
+        hidden_dim=4096,
+        k=32,
+        batch_size=1024,
+        epochs=300,
+        post_sparsify=L1Normalize(),
+        sparsify_score_mode="abs",
+        sparsify_ste_alpha=0.01,
+        lr=1e-3,
+        decay=True,
+        device="cpu",
+        compile=False,
+    )
+)
+
+srp = model.fit_transform(A)
+
+print(srp)
+# SRPTensor(shape=(10000, 4096), k=32, vals=..., cols=...)
+
+print(srp.to_csr().shape)
+# torch.Size([10000, 4096])
+"""
+    )

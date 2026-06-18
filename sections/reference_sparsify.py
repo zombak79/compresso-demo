@@ -158,10 +158,19 @@ class SRPTensor:
 - `k`: stored non-zero slots per row.
 - `device`: device of `vals`.
 - `dtype`: dtype of `vals`.
+- `nnz`: number of stored SRP slots, equal to `rows * k`.
+- `requires_grad`: whether `vals` requires gradients.
 
 **Important Methods**
 
 - `to_dense()`: materializes a dense tensor. Duplicate columns within a row are accumulated.
+- `to(...)`, `cpu()`, `cuda(...)`: move/cast the SRP tensor while keeping `cols` as `torch.long`.
+- `detach()`, `clone()`, `contiguous()`, `requires_grad_(...)`: tensor-like utility methods.
+- `size(dim=None)`, `dim()`, `numel()`, `is_floating_point()`: tensor-like metadata helpers.
+- `to_coo()`, `to_csr()`, `to_csc()`: convert to PyTorch sparse layouts.
+- `to_bsr(blocksize)`, `to_bsc(blocksize)`: convert to PyTorch block sparse layouts. Block size is explicit because `(1, 1)` is rarely useful.
+- `to_scipy_coo()`, `to_scipy_csr()`, `to_scipy_csc()`: convert to SciPy sparse matrices.
+- `to_numpy_dict()` / `numpy()`: return structural arrays `{cols, vals, shape, prefix_shape}`.
 - `to_dict()`: serializes into a `torch.save`-compatible payload.
 - `from_dict(payload, validate=True)`: restores an `SRPTensor`.
 - `from_dense(x, k, score_mode="abs")`: projects dense `x` to fixed-k SRP.
@@ -192,6 +201,16 @@ print(srp.vals)
 print(srp.to_dense())
 # tensor([[ 0.0000, -0.9000,  0.3000,  0.0000],
 #         [ 2.0000,  0.0000,  0.0000, -3.0000]])
+
+print(srp)
+# SRPTensor(shape=(2, 4), k=2, vals=Tensor(...), cols=Tensor(...))
+
+coo = srp.to_coo()
+csr = srp.to_csr()
+scipy_csr = srp.to_scipy_csr()
+
+print(coo.layout)
+# torch.sparse_coo
 """
     )
 

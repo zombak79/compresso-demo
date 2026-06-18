@@ -460,7 +460,7 @@ AssignUnclusteredToNearestCluster(
     cluster_scope: Literal["active", "all", "leaves", "roots"] = "active",
     coverage_scope: Literal["active", "all"] = "active",
     assigned_weight: float = 1.0,
-    centroid_top_k: int | None = None,
+    centroid_top_m: int | None = None,
     normalize_centroids: bool = True,
     verbose: bool = False,
 )
@@ -487,7 +487,8 @@ expanded_cluster
 - `cluster_scope`: which clusters can receive uncovered entities.
 - `coverage_scope`: which clusters define whether an entity is already covered.
 - `assigned_weight`: weight of newly assigned entities when recomputing the expanded centroid.
-- `centroid_top_k`: optional truncation of expanded centroids.
+- `centroid_top_m`: number of strongest features kept in expanded centroids.
+  `None` preserves the base cluster centroid width.
 - `normalize_centroids`: normalize expanded centroids.
 
 Output: new expanded parent nodes with assignment provenance in `metadata`
@@ -708,7 +709,7 @@ graph = cc.ClusteringPipeline(
         cc.CentroidSimilarityMerge(threshold=0.85, top_k=20),
 
         # 5. Optionally expand final coverage.
-        cc.AssignUnclusteredToNearestCluster(srp, coverage_scope="all"),
+        cc.AssignUnclusteredToNearestCluster(srp, coverage_scope="all", centroid_top_m=4),
 
         # 6. Choose active visible clusters.
         cc.PruneRedundantRoots(),
