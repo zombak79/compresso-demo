@@ -9,41 +9,44 @@ def render() -> None:
 
     st.markdown(
         """
-Compresso is a small research-oriented library for building and analyzing sparse neural
-representations. It focuses on practical sparse learning tools: Top-k sparsification,
-sparse autoencoders, sparse parameter learning, SRP tensors, and clustering methods for
-understanding what sparse features represent.
+Compresso is a PyTorch framework for sparse representation learning. It provides
+building blocks for Top-k sparsification, sparse autoencoders, compact sparse
+tensor storage, and semantic analysis of learned sparse features.
 
-This demo will grow into an interactive guide. The first milestone is cluster exploration:
-load sparse entity representations, browse discovered clusters, inspect their items, and
-compare different clustering strategies.
+This site is a lightweight companion demo. Instead of reproducing the full API
+reference, it shows what sparse representations can look like in a recommender
+system: products are embedded, compressed into sparse codes, grouped by shared
+latent factors, and labeled as human-readable segments.
 """
     )
 
     left, middle, right = st.columns(3)
 
     with left:
-        st.subheader("Sparse Learning")
-        st.write("Train or apply Top-k sparse representations, sparse autoencoders, and masked sparse parameters.")
+        st.subheader("Learn Sparse Codes")
+        st.write("Dense product metadata is encoded and compressed with a Top-k sparse autoencoder.")
 
     with middle:
-        st.subheader("Compact Storage")
-        st.write("Store sparse activations and embeddings with SRP tensors, then use them for lightweight inference.")
+        st.subheader("Find Latent Factors")
+        st.write("Items that activate the same sparse feature form compact, inspectable product segments.")
 
     with right:
-        st.subheader("Interpretability")
-        st.write("Cluster sparse representations into human-readable segments and explore the hierarchy.")
+        st.subheader("Browse the Result")
+        st.write("Each example page shows labeled clusters with representative Amazon products.")
 
     st.divider()
 
-    st.subheader("What is coming next")
+    st.subheader("What to explore")
     st.markdown(
         """
-- Cluster explorer for the GoodBooks demo bundle
-- User-based cluster recommendations from sparse item representations
-- Short walkthroughs for SAE training, compressed ELSA, and SRP inference
-- Links to documentation, paper notes, and source code
+- **Methodology** explains the shared pipeline used for the Amazon examples:
+  checkpoint creation, sentence-transformer embeddings, sparse autoencoder
+  training, clustering, labeling, and export.
+- **Dataset pages** load compact zip artifacts from this repository and render
+  discovered product clusters as horizontal galleries.
+- **Official docs** remain the best place for installation instructions, API
+  reference, and deeper examples.
 """
     )
 
-    st.info("Links and additional pages will be added as the demo structure stabilizes.")
+    st.link_button("Open Compresso Docs", "https://zombak79.github.io/compresso/index.html")

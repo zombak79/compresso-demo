@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import html
 
 import streamlit as st
 
+from lib.example_bundles import discover_example_bundles, markdown_sections
+from lib.paths import DATA_DIR
 from sections import (
-    cluster_explorer,
-    goodbooks_pipeline,
+    examples,
     overview,
-    placeholder,
-    reference_clustering,
-    reference_models,
-    reference_sparsify,
 )
 
 
@@ -24,21 +22,28 @@ st.set_page_config(
 
 PageFn = Callable[[], None]
 
+EXAMPLE_BUNDLES = discover_example_bundles()
+METHODOLOGY_PAGE = "example:methodology"
+METHODOLOGY_PATH = DATA_DIR / "description.md"
+METHODOLOGY_MARKDOWN = METHODOLOGY_PATH.read_text(encoding="utf-8") if METHODOLOGY_PATH.exists() else ""
+METHODOLOGY_SECTIONS = tuple(markdown_sections(METHODOLOGY_MARKDOWN))
+
 PAGES: dict[str, PageFn] = {
     "Overview": overview.render,
-    "Sparsify": reference_sparsify.render,
-    "Models": reference_models.render,
-    "Clustering": reference_clustering.render,
-    "GoodBooks Pipeline": goodbooks_pipeline.render,
-    "Cluster Explorer": cluster_explorer.render,
-    "User Recommendations": lambda: placeholder.render("User Recommendations"),
+    METHODOLOGY_PAGE: lambda: examples.render_methodology(METHODOLOGY_MARKDOWN),
 }
+for bundle in EXAMPLE_BUNDLES:
+    PAGES[bundle.page_key] = lambda bundle=bundle: examples.render_dataset(bundle)
+if not EXAMPLE_BUNDLES:
+    PAGES["Examples"] = examples.render_missing_examples
 
 MENU = [
     ("Compresso", [("Overview", "Overview")]),
-    ("Reference", [("Sparsify", "Sparsify"), ("Models", "Models"), ("Clustering", "Clustering")]),
-    ("Example", [("GoodBooks Pipeline", "GoodBooks Pipeline")]),
-    ("Explore", [("Cluster Explorer", "Cluster Explorer"), ("User Recommendations", "User Recommendations")]),
+    (
+        "Examples",
+        [("Methodology", METHODOLOGY_PAGE)]
+        + ([(bundle.title, bundle.page_key) for bundle in EXAMPLE_BUNDLES] if EXAMPLE_BUNDLES else [("No bundles found", "Examples")]),
+    ),
 ]
 
 
@@ -94,6 +99,22 @@ def render_menu() -> str:
                 font-weight: 750;
                 margin: 0.3rem 0 0.3rem 0;
             }
+            .nav-subitems {
+                margin: -0.45rem 0 0.45rem 2.0rem;
+            }
+            .nav-subitems a {
+                color: inherit;
+                display: block;
+                font-size: 0.92rem;
+                line-height: 1.35;
+                opacity: 0.82;
+                padding: 0.03rem 0;
+                text-decoration: none;
+            }
+            .nav-subitems a:hover {
+                opacity: 1;
+                text-decoration: underline;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -111,6 +132,12 @@ def render_menu() -> str:
                     on_click=set_page,
                     args=(page_key,),
                 )
+                if active and page_key == METHODOLOGY_PAGE and METHODOLOGY_SECTIONS:
+                    links = "".join(
+                        f'<a href="#{html.escape(section.anchor)}">- {html.escape(section.title)}</a>'
+                        for section in METHODOLOGY_SECTIONS
+                    )
+                    st.markdown(f'<div class="nav-subitems">{links}</div>', unsafe_allow_html=True)
 
     return page
 
