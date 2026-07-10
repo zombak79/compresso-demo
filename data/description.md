@@ -2,7 +2,7 @@
 
 ## Dataset
 
-This example uses Amazon Reviews 2023 dataset. For all categories, see this [link](https://github.com/zombak79/compresso-recsys#supported-amazon-2023-datasets).  We build a compact recommender-system checkpoint with item metadata, interaction splits, and product image URLs.
+This example uses Amazon Reviews 2023 dataset. For all categories, see this [link]([https://github.com/zombak79/compresso-recsys#supported-amazon-2023-datasets](https://zombak79.github.io/compresso-recsys/cli-reference.html#supported-amazon-reviews-2023-datasets)).  We build a compact recommender-system checkpoint with item metadata, interaction splits, and product image URLs.
 
 ```python
 import compresso
