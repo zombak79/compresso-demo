@@ -111,7 +111,7 @@ def render_dataset(info: ExampleBundleInfo) -> None:
         "Cards show representative products from that cluster."
     )
 
-    shown_clusters = clusters.sort_values(["_n_items", "_label"], ascending=[False, True], kind="stable").head(max_clusters)
+    shown_clusters = clusters.sample(frac=1).head(max_clusters)
     for row_idx, (_, row) in enumerate(shown_clusters.iterrows()):
         indices = _cluster_indices(row.get("indices", []))
         items = _cluster_items(metadata, indices)
