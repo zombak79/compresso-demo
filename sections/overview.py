@@ -1,52 +1,52 @@
 from __future__ import annotations
 
+from base64 import b64encode
+
 import streamlit as st
 
+from lib.paths import DATA_DIR
 
-def render() -> None:
-    st.title("Compresso")
-    st.caption("Sparse representations for compact, inspectable deep learning.")
 
+OVERVIEW_IMAGE_PATH = DATA_DIR / "compresso.jpg"
+
+
+def _overview_image_data_uri() -> str:
+    if not OVERVIEW_IMAGE_PATH.exists():
+        return ""
+    encoded = b64encode(OVERVIEW_IMAGE_PATH.read_bytes()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
+
+
+def render(markdown: str) -> None:
     st.markdown(
         """
-Compresso is a PyTorch framework for sparse representation learning. It provides
-building blocks for Top-k sparsification, sparse autoencoders, compact sparse
-tensor storage, and semantic analysis of learned sparse features.
-
-This site is a lightweight companion demo. Instead of reproducing the full API
-reference, it shows what sparse representations can look like in a recommender
-system: products are embedded, compressed into sparse codes, grouped by shared
-latent factors, and labeled as human-readable segments.
-"""
+        <style>
+        :root {
+            --overview-logo-max-width: 100px;
+            --overview-logo-preferred-width: 10vw;
+        }
+        .overview-logo {
+            float: left;
+            margin: 0 1.5rem 1rem 0;
+            height: auto;
+            max-width: 100%;
+            width: min(var(--overview-logo-preferred-width), var(--overview-logo-max-width));
+        }
+        .overview-logo-clear {
+            clear: both;
+        }
+        @media (max-width: 700px) {
+            .overview-logo {
+                display: block;
+                float: none;
+                margin: 0 auto 1rem;
+                max-width: 150px;
+                width: 48vw;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
-
-    left, middle, right = st.columns(3)
-
-    with left:
-        st.subheader("Learn Sparse Codes")
-        st.write("Dense product metadata is encoded and compressed with a Top-k sparse autoencoder.")
-
-    with middle:
-        st.subheader("Find Latent Factors")
-        st.write("Items that activate the same sparse feature form compact, inspectable product segments.")
-
-    with right:
-        st.subheader("Browse the Result")
-        st.write("Each example page shows labeled clusters with representative Amazon products.")
-
-    st.divider()
-
-    st.subheader("What to explore")
-    st.markdown(
-        """
-- **Methodology** explains the shared pipeline used for the Amazon examples:
-  checkpoint creation, sentence-transformer embeddings, sparse autoencoder
-  training, clustering, labeling, and export.
-- **Dataset pages** load compact zip artifacts from this repository and render
-  discovered product clusters as horizontal galleries.
-- **Official docs** remain the best place for installation instructions, API
-  reference, and deeper examples.
-"""
-    )
-
-    st.link_button("Open Compresso Docs", "https://zombak79.github.io/compresso/index.html")
+    content = markdown.replace("{{ compresso_image }}", _overview_image_data_uri())
+    st.markdown(content, unsafe_allow_html=True)

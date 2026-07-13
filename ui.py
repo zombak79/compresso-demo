@@ -8,6 +8,10 @@ import streamlit as st
 from lib.cluster_view import item_card_rows
 
 
+PRODUCT_CARD_HEIGHT_PX = 240
+PRODUCT_CARD_IMAGE_HEIGHT_PX = 120
+
+
 def init_item_row_styles() -> None:
     st.markdown(
         """
@@ -148,7 +152,7 @@ def init_product_gallery_styles() -> None:
             box-shadow: 0 8px 24px rgba(20, 26, 38, 0.09);
             color: #242938;
             flex: 0 0 214px;
-            height: 338px;
+            height: __PRODUCT_CARD_HEIGHT_PX__px;
             overflow: hidden;
             scroll-snap-align: start;
         }
@@ -156,7 +160,7 @@ def init_product_gallery_styles() -> None:
             align-items: center;
             background: #f5f6f8;
             display: flex;
-            height: 178px;
+            height: __PRODUCT_CARD_IMAGE_HEIGHT_PX__px;
             justify-content: center;
             width: 100%;
         }
@@ -191,7 +195,9 @@ def init_product_gallery_styles() -> None:
             margin-top: 0.24rem;
         }
         </style>
-        """,
+        """.replace("__PRODUCT_CARD_HEIGHT_PX__", str(PRODUCT_CARD_HEIGHT_PX)).replace(
+            "__PRODUCT_CARD_IMAGE_HEIGHT_PX__", str(PRODUCT_CARD_IMAGE_HEIGHT_PX)
+        ),
         unsafe_allow_html=True,
     )
 

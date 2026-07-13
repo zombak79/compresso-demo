@@ -23,13 +23,15 @@ st.set_page_config(
 PageFn = Callable[[], None]
 
 EXAMPLE_BUNDLES = discover_example_bundles()
+OVERVIEW_PATH = DATA_DIR / "overview.md"
+OVERVIEW_MARKDOWN = OVERVIEW_PATH.read_text(encoding="utf-8") if OVERVIEW_PATH.exists() else "# Compresso"
 METHODOLOGY_PAGE = "example:methodology"
 METHODOLOGY_PATH = DATA_DIR / "description.md"
 METHODOLOGY_MARKDOWN = METHODOLOGY_PATH.read_text(encoding="utf-8") if METHODOLOGY_PATH.exists() else ""
 METHODOLOGY_SECTIONS = tuple(markdown_sections(METHODOLOGY_MARKDOWN))
 
 PAGES: dict[str, PageFn] = {
-    "Overview": overview.render,
+    "Overview": lambda: overview.render(OVERVIEW_MARKDOWN),
     METHODOLOGY_PAGE: lambda: examples.render_methodology(METHODOLOGY_MARKDOWN),
 }
 for bundle in EXAMPLE_BUNDLES:
