@@ -102,8 +102,8 @@ def render_dataset(info: ExampleBundleInfo) -> None:
     a, b, c, d = st.columns(4)
     a.metric("Products", f"{len(metadata):,}")
     b.metric("Clusters", f"{len(clusters):,}")
-    c.metric("Products Covered", f"{covered_items:,}")
-    d.metric("Assignments", f"{total_assignments:,}")
+    #c.metric("Products Covered", f"{covered_items:,}")
+    #d.metric("Assignments", f"{total_assignments:,}")
 
     st.subheader("Discovered Clusters")
     st.caption(
